@@ -1,0 +1,53 @@
+version: '3'
+
+volumes:
+  learn_cookiecutter_local_postgres_data: {}
+  learn_cookiecutter_local_postgres_data_backups: {}
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: learn_cookiecutter_local_django
+    container_name: learn_cookiecutter_local_django
+    platform: linux/x86_64
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - "8000:8000"
+    command: /start
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: learn_cookiecutter_production_postgres
+    container_name: learn_cookiecutter_local_postgres
+    volumes:
+      - learn_cookiecutter_local_postgres_data:/var/lib/postgresql/data:Z
+      - learn_cookiecutter_local_postgres_data_backups:/backups:z
+    env_file:
+      - ./.envs/.local/.postgres
+
+  docs:
+    image: learn_cookiecutter_local_docs
+    container_name: learn_cookiecutter_local_docs
+    platform: linux/x86_64
+    build:
+      context: .
+      dockerfile: ./compose/local/docs/Dockerfile
+    env_file:
+      - ./.envs/.local/.django
+    volumes:
+      - ./docs:/docs:z
+      - ./config:/app/config:z
+      - ./learn_cookiecutter:/app/learn_cookiecutter:z
+    ports:
+      - "9000:9000"
+    command: /start-docs
